@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, NavLink } from "react-router-dom";
 import Login from "./pages/Login";
-import SignUp from "./pages/SIgnUp";
+import SignUp from "./pages/SignUp";
 import ProjectForm from "./pages/ProjectForm";
 import Timer from "./pages/Timer";
 import NumberSlider from "./pages/Demo";
