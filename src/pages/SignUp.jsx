@@ -112,8 +112,8 @@ export default function SignUp() {
       formData.append("lastName", lastName);
       formData.append("email", email);
       formData.append("password", password);
-      if (image1) formData.append("image1", image1);
-      if (image2) formData.append("image2", image2);
+      // if (image1) formData.append("image1", image1);
+      // if (image2) formData.append("image2", image2);
 
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/signup`,
@@ -221,7 +221,7 @@ export default function SignUp() {
         />
       </div>
 
-      <div style={styles.field}>
+      {/* <div style={styles.field}>
         <label htmlFor="image1" style={styles.label}>
           Image 1
         </label>
@@ -245,7 +245,7 @@ export default function SignUp() {
           style={styles.fileInput}
           onChange={(e) => setImage2(e.target.files[0])}
         />
-      </div>
+      </div> */}
 
       <button
         type="submit"

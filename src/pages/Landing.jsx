@@ -1,7 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import useUserStore from "../reducer/useUserStore";
 
 const LandingPage = () => {
+const {user}=useUserStore();
+  useEffect(()=>{
+if(user){
+  window.location.href = "/project";
+}
+  },[])
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-400 to-blue-600 px-6 text-white">
       <h1 className="text-5xl font-extrabold mb-4">Welcome to NumberSlider</h1>

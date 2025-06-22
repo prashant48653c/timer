@@ -1,33 +1,77 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { act, useEffect, useRef, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import useProjectStore from "../reducer/useProjectStore";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import useUserStore from "../reducer/useUserStore";
 
 const NumberSlider = () => {
   const { activeProject } = useProjectStore();
-
+console.log(activeProject)
   const num = activeProject?.totalNumbers?.split(",") || [];
   const intervalSec = parseInt(activeProject?.gap || "2");
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+const [pauseNote, setPauseNote] = useState("");
+
   const [currentIndex, setCurrentIndex] = useState(
     parseInt(activeProject?.currentState || 0)
   );
  const [timeLeft, setTimeLeft] = useState(
   (num.length - currentIndex) * intervalSec
 );
+const navigate = useNavigate();
+const { user } = useUserStore();
   const [paused, setPaused] = useState(false);
 const [currentState, setCurrentState] = useState(activeProject?.currentState || 0);
 
-const updateProjectState = async (index) => {
+const handleNoteSubmit = async () => {
+  const updatedIndex = currentIndex;
+  const now = new Date();
+  const pauseAt = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   try {
-    const response = await axios.patch(`${import.meta.env.VITE_BACKEND_URL}/project/${activeProject.id}`, {
-      currentState: index,
+    await axios.patch(`${import.meta.env.VITE_BACKEND_URL}/project/${activeProject.id}`, {
+      currentState: updatedIndex  ,
+      pauseAt,
+      note: pauseNote  ,
     });
-    console.log("Project updated:", response.data);
-    toast.success("Project updated successfully!");
+
+    toast.success("Note saved!");
   } catch (error) {
-    console.error("Failed to update project:", error);
+    console.error("Failed to update project with note:", error);
+    toast.error("Failed to save note.");
   }
+
+  setNoteModalVisible(false);
+  setPauseNote("");
 };
+
+const handleComplete = async () => {
+  const updatedIndex = currentIndex;
+  const now = new Date();
+  const pauseAt = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  try {
+    await axios.patch(`${import.meta.env.VITE_BACKEND_URL}/project/${activeProject.id}`, {
+      currentState:  0 ,
+      pauseAt,
+      note:  "Task was completed!",
+    });
+
+    toast.success("Task was completed!");
+  } catch (error) {
+    console.error("Failed to update project with note:", error);
+    toast.error("Failed to save note.");
+  }
+
+  
+};
+useEffect(() => {
+  if (timeLeft <= 0) {
+    handleComplete();
+  }
+}, [timeLeft]);
+
 
 
 
@@ -58,7 +102,18 @@ const updateProjectState = async (index) => {
     }
   }, []);
 
+
+    useEffect(() => {
+      if (!user) {
+        navigate("/login");
+      }
+     
+    }, [user]);
+  
+
  useEffect(() => {
+
+  
   if (paused) return;
 
   const timerInterval = setInterval(() => {
@@ -80,7 +135,7 @@ const updateProjectState = async (index) => {
         
         // 🎯 Animation ended, reset state to 0 and patch
         setCurrentState(0);
-        updateProjectState(0); // <-- reset currentState in DB
+         
         return prev;
       }
 
@@ -96,23 +151,42 @@ const updateProjectState = async (index) => {
   };
 }, [paused]);
 
- const togglePause = async () => {
+const togglePause = async () => {
   const newPaused = !paused;
-  setPaused(newPaused);
-  toast.success(newPaused ? "Paused" : "Resumed");
 
   if (newPaused) {
-    const updatedIndex = currentIndex;
-    setCurrentState(updatedIndex);
-    await updateProjectState(updatedIndex); // pass updated index
+    toast.error("Paused");
+    setPaused(true);
+    setNoteModalVisible(true); // open modal for note
+  } else {
+    setPaused(false);
+    toast.success("Resumed");
   }
 };
+
 
   return (
   <div
  onClick={togglePause}
  className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 cursor-pointer py-28 relative overflow-hidden"
 >
+
+  {activeProject?.image1 && (
+  <img
+    src={activeProject.image1}
+    alt="Real Image"
+    className="absolute top-4 left-4 w-20 h-20 rounded-full border-4 border-green-400 shadow-lg object-cover z-50"
+  />
+)}
+
+{activeProject?.image2 && (
+  <img
+    src={activeProject.image2}
+    alt="AI Image"
+    className="absolute top-4 right-4 w-20 h-20 rounded-full border-4 border-blue-400 shadow-lg object-cover z-50"
+  />
+)}
+
  {/* Background decorative elements */}
  <div className="absolute inset-0 opacity-10">
    <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full blur-3xl"></div>
@@ -171,6 +245,52 @@ const updateProjectState = async (index) => {
    </div>
  </div>
 
+
+{noteModalVisible && (
+  <div
+    className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+    onClick={(e) => e.stopPropagation()} // Prevent bubbling up when clicking outside modal content
+  >
+    <div
+      className="bg-white text-black rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4"
+      onClick={(e) => e.stopPropagation()} // Prevent bubbling up when clicking inside modal box
+    >
+      <h2 className="text-xl font-bold">Pause Note</h2>
+      <textarea
+        rows="4"
+        className="w-full p-3 border rounded-md focus:outline-none"
+        placeholder="Why are you pausing?"
+        value={pauseNote}
+        onChange={(e) => setPauseNote(e.target.value)}
+        onClick={(e) => e.stopPropagation()} // Prevent bubbling when clicking inside textarea
+      />
+      <div className="flex justify-end space-x-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setPaused(false);
+            setNoteModalVisible(false);
+            setPauseNote("");
+          }}
+          className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNoteSubmit();
+          }}
+          className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600"
+        >
+          Save Note
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
  {/* Number Preview Grid */}
  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-2xl max-w-4xl z-10">
    <h3 className="text-white text-lg font-semibold mb-4 text-center">Number Sequence</h3>
@@ -192,17 +312,7 @@ const updateProjectState = async (index) => {
    </div>
  </div>
 
- <Toaster 
-   position="top-center"
-   toastOptions={{
-     style: {
-       background: 'rgba(255, 255, 255, 0.1)',
-       backdropFilter: 'blur(10px)',
-       border: '1px solid rgba(255, 255, 255, 0.2)',
-       color: 'white',
-     },
-   }}
- />
+
 </div>
   );
 };

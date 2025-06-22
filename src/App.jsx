@@ -7,6 +7,9 @@ import Timer from "./pages/Timer";
 import NumberSlider from "./pages/Demo";
 import "./index.css"; // or './main.css'
 import LandingPage from "./pages/Landing";
+import { Toaster } from "react-hot-toast";
+
+
 
 const linkStyle = {
   marginRight: 15,
@@ -29,9 +32,6 @@ export default function App() {
     <div
       className=""
       style={{
-       
-       
-        
         fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         borderRadius: 12,
@@ -43,25 +43,6 @@ export default function App() {
           path="/"
           element={
             <>
-              <nav style={{ marginBottom: 30, textAlign: "center" }}>
-                <NavLink
-                  to="/login"
-                  style={({ isActive }) =>
-                    isActive ? { ...linkStyle, ...activeLinkStyle } : linkStyle
-                  }
-                >
-                  Login
-                </NavLink>
-                <NavLink
-                  to="/signup"
-                  style={({ isActive }) =>
-                    isActive ? { ...linkStyle, ...activeLinkStyle } : linkStyle
-                  }
-                >
-                  Sign Up
-                </NavLink>
-              </nav>
-
               <LandingPage />
             </>
           }
@@ -71,7 +52,10 @@ export default function App() {
           path="/login"
           element={
             <>
-              <nav style={{ marginBottom: 30, textAlign: "center" }}>
+              <nav
+                className="mt-10"
+                style={{ marginBottom: 30, textAlign: "center" }}
+              >
                 <NavLink
                   to="/login"
                   style={({ isActive }) =>
@@ -98,7 +82,10 @@ export default function App() {
           path="/signup"
           element={
             <>
-              <nav style={{ marginBottom: 30, textAlign: "center" }}>
+              <nav
+                className="mt-10"
+                style={{ marginBottom: 30, textAlign: "center" }}
+              >
                 <NavLink
                   to="/login"
                   style={({ isActive }) =>
@@ -128,6 +115,17 @@ export default function App() {
 
         <Route path="*" element={<Login />} />
       </Routes>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            color: "green",
+          },
+        }}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 const SetupForm = () => {
   const [projectName, setProjectName] = useState("");
@@ -81,7 +82,7 @@ const handlePauseResume = () => {
       .filter((n) => n !== "")
       .map(Number);
     if (projectName.trim() === "" || numbers.length < 3) {
-      alert("Please enter a project name and at least 3 numbers.");
+      toast.error("Please enter a project name and at least 3 numbers.");
       return;
     }
     setFinalNum(numbers);
