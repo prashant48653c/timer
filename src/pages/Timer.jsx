@@ -8,6 +8,7 @@ const SetupForm = () => {
   const [intervalSec, setIntervalSec] = useState(2);
 const [isRunning, setIsRunning] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
+
 const [currentIndex, setCurrentIndex] = useState(0);
  
 const intervalRef = useRef(null);

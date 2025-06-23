@@ -4,6 +4,7 @@ import useProjectStore from "../reducer/useProjectStore";
 import useUserStore from "../reducer/useUserStore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import ProjectSliderPanel from "../components/SideBar";
 
 export default function ProjectForm() {
   const { setActiveProject } = useProjectStore();
@@ -14,6 +15,7 @@ export default function ProjectForm() {
 const [search, setSearch] = useState("");
 const [page, setPage] = useState(1);
 const [totalPages, setTotalPages] = useState(1);
+const [showSlider, setShowSlider] = useState(false);
 
   const openNotesModal = (project) => {
     setSelectedProjectNotes(project.pauseNotes || []);
@@ -25,6 +27,8 @@ const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
   const [projectName, setProjectName] = useState("");
   const [numbers, setNumbers] = useState("");
+  const [handledBy, setHandledBy] = useState("");
+
   const [projects, setProjects] = useState([]);
   const [gap, setGap] = useState(2);
 const fetchProjects = async (query = "", currentPage = 1) => {
@@ -71,6 +75,8 @@ function isValidNumberList(numbers) {
   // Show user error or handle accordingly
 }
     formData.append("currentState", 0);
+    formData.append("handledBy", handledBy);
+
     formData.append("image1", realImage); // Real Image
     formData.append("image2", aiImage); // AI Image
 
@@ -140,7 +146,24 @@ function isValidNumberList(numbers) {
             required
           />
         </div>
-
+        
+  <div>
+          <label
+            htmlFor="projectName"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Handled By
+          </label>
+          <input
+            id="handledBy"
+            type="text"
+            value={handledBy}
+            onChange={(e) => setHandledBy(e.target.value)}
+            placeholder="Enter project owner name"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            required
+          />
+        </div>
         <div>
           <label
             htmlFor="numbers"
@@ -202,6 +225,7 @@ function isValidNumberList(numbers) {
           />
         </div>
 
+
         <button
           type="submit"
           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition"
@@ -242,10 +266,30 @@ function isValidNumberList(numbers) {
           </div>
         </div>
       )}
+{/* Project Slider Panel */}
+<ProjectSliderPanel
+  isOpen={showSlider}
+  projects={projects}
+  page={page}
+  totalPages={totalPages}
+  onPageChange={setPage}
+  onProjectClick={handleProjectClick}
+  onViewNotes={openNotesModal}
+  onClose={() => setShowSlider(false)}
+/>
+
+{/* Floating Ball Icon Button */}
+<button
+  onClick={() => setShowSlider(!showSlider)}
+  className="fixed bottom-6 left-6 w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center shadow-lg hover:bg-green-700 transition-all duration-300 z-50"
+  title="Toggle Project Panel"
+>
+  🟢
+</button>
 
 
       {/* PROJECT LIST */}
-     <div className="max-w-md mx-auto mt-6">
+     {/* <div className="max-w-md mx-auto mt-6">
   <h3 className="text-lg font-semibold text-gray-800 mb-4">Other Projects</h3>
 
   <input
@@ -310,7 +354,7 @@ function isValidNumberList(numbers) {
 
     </div>
   )}
-</div>
+</div> */}
 
 
       {/* LOGOUT BUTTON */}
