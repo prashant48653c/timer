@@ -24,9 +24,9 @@ export default function ProjectSliderPanel({
           &times;
         </button>
       </div>
-      <div className="p-4 overflow-y-auto flex flex-col max-h-[90vh] space-y-3">
+      <div className="p-4 overflow-y-auto min-h-[30rem]  flex flex-col max-h-[90vh] space-y-3">
         {projects.length === 0 ? (
-          <p className="text-gray-500">No projects yet.</p>
+          <p className="text-gray-500 text-center mt-[30vh]">No projects yet.</p>
         ) : (
           projects.map((item, i) => (
             <div
@@ -50,7 +50,12 @@ export default function ProjectSliderPanel({
               </div>
             </div>
           ))
+
+          
         )}
+
+
+{projects.length != 0 && (
 
  <div className="flex justify-center items-center mt-4 space-x-2">
   <button
@@ -71,6 +76,9 @@ export default function ProjectSliderPanel({
     Next
   </button>
 </div>
+
+)}
+
       </div>
      
 

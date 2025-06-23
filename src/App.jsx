@@ -30,7 +30,7 @@ const activeLinkStyle = {
 export default function App() {
   return (
     <div
-      className=""
+      className=" min-h-[90vh]"
       style={{
         fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",

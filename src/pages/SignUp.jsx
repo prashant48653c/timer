@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 
 const styles = {
   form: {
@@ -82,6 +83,7 @@ const styles = {
 
 export default function SignUp() {
   const navigate = useNavigate();
+const [showPassword, setShowPassword] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -205,21 +207,42 @@ export default function SignUp() {
       </div>
 
       <div style={styles.field}>
-        <label htmlFor="password" style={styles.label}>
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle("password")}
-          onFocus={() => setFocusedField("password")}
-          onBlur={() => setFocusedField(null)}
-          autoComplete="new-password"
-        />
-      </div>
+  <label htmlFor="password" style={styles.label}>
+    Password
+  </label>
+  <div style={{ position: "relative" }}>
+    <input
+      id="password"
+      type={showPassword ? "text" : "password"}
+      required
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      style={{ ...inputStyle("password"), paddingRight: "2.5rem" }}
+      onFocus={() => setFocusedField("password")}
+      onBlur={() => setFocusedField(null)}
+      autoComplete="new-password"
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      style={{
+        position: "absolute",
+        top: "50%",
+        right: 10,
+        transform: "translateY(-50%)",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 4,
+        fontSize: "1rem",
+      }}
+      tabIndex={-1}
+    >
+      {showPassword ?<FaRegEyeSlash  /> : <FaRegEye />}
+    </button>
+  </div>
+</div>
+
 
       {/* <div style={styles.field}>
         <label htmlFor="image1" style={styles.label}>

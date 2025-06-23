@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import useUserStore from "../reducer/useUserStore";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
 const styles = {
   form: {
@@ -72,6 +73,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+    const [showPassword, setShowPassword] = useState(false); // 👈 new state
+
   const [focusedField, setFocusedField] = useState(null);
 const navigate=useNavigate()
   const handleSubmit = async (e) => {
@@ -127,19 +130,51 @@ const navigate=useNavigate()
         />
       </div>
 
-      <div style={styles.field}>
-        <label htmlFor="password" style={styles.label}>Password</label>
-        <input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle("password")}
-          onFocus={() => setFocusedField("password")}
-          onBlur={() => setFocusedField(null)}
-        />
-      </div>
+     <div style={styles.field}>
+  <label htmlFor="password" style={styles.label}>
+    Password
+  </label>
+  <div style={{ position: "relative" }}>
+    <input
+      id="password"
+      type={showPassword ? "text" : "password"}
+      required
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      style={{
+        ...inputStyle("password"),
+        paddingRight: "2.75rem", // space for the eye icon
+      }}
+      onFocus={() => setFocusedField("password")}
+      onBlur={() => setFocusedField(null)}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      style={{
+        position: "absolute",
+        top: "50%",
+        right: "10px",
+        transform: "translateY(-50%)",
+        background: "transparent",
+        border: "none",
+        padding: 0,
+        margin: 0,
+        cursor: "pointer",
+        color: "#64748b",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        width: "24px",
+      }}
+      aria-label={showPassword ? "Hide password" : "Show password"}
+    >
+      {showPassword ? <FaRegEyeSlash size={18} /> : <FaRegEye size={18} />}
+    </button>
+  </div>
+</div>
+
 
       <button
         type="submit"
