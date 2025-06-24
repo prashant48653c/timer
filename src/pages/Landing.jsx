@@ -1,12 +1,13 @@
 import React, { useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigation } from "react-router-dom";
 import useUserStore from "../reducer/useUserStore";
 
 const LandingPage = () => {
+  const navigate=useNavigation();
   const { user } = useUserStore();
   useEffect(() => {
     if (user) {
-      window.location.href = "/project";
+      navigate("/project");
     }
   }, []);
   return (
