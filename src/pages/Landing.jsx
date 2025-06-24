@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
-import { NavLink, useNavigation } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import useUserStore from "../reducer/useUserStore";
 
 const LandingPage = () => {
-  const navigate=useNavigation();
+  const navigate=useNavigate();
   const { user } = useUserStore();
   useEffect(() => {
     if (user) {
