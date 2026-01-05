@@ -1,4 +1,4 @@
-import React, { act, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import useProjectStore from "../reducer/useProjectStore";
 import axios from "axios";
@@ -10,6 +10,7 @@ const NumberSlider = () => {
   console.log(activeProject);
   const num = activeProject?.totalNumbers?.split(",") || [];
   const intervalSec = parseInt(activeProject?.gap || "2");
+
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [pauseNote, setPauseNote] = useState("");
   const [timeElapsed, setTimeElapsed] = useState(
@@ -21,19 +22,24 @@ const NumberSlider = () => {
   const [editHandledBy, setEditHandledBy] = useState(
     activeProject?.handledBy || ""
   );
-
   const [currentIndex, setCurrentIndex] = useState(
     parseInt(activeProject?.currentState || 0)
   );
   const [timeLeft, setTimeLeft] = useState(
     (num.length - currentIndex) * intervalSec
   );
+
   const navigate = useNavigate();
   const { user } = useUserStore();
   const [paused, setPaused] = useState(false);
   const [currentState, setCurrentState] = useState(
     activeProject?.currentState || 0
   );
+
+  // New states for image upload modal
+  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleNoteSubmit = async () => {
     const updatedIndex = currentIndex;
@@ -53,13 +59,11 @@ const NumberSlider = () => {
           note: pauseNote,
         }
       );
-
       toast.success("Note saved!");
     } catch (error) {
       console.error("Failed to update project with note:", error);
       toast.error("Failed to save note.");
     }
-
     setNoteModalVisible(false);
     setPauseNote("");
   };
@@ -83,11 +87,11 @@ const NumberSlider = () => {
       setTimeLeft((num.length - nextIndex) * intervalSec);
     }
   };
+
   const handleNumberClick = async (index, item) => {
     speakNumber(item);
     setCurrentIndex(index);
-    setCurrentState(index); // if currentState represents the same thing
-
+    setCurrentState(index);
     try {
       const res = await axios.patch(
         `${import.meta.env.VITE_BACKEND_URL}/project/${activeProject.id}`,
@@ -95,45 +99,46 @@ const NumberSlider = () => {
           currentState: index,
         }
       );
-
-      // Optionally update global state
       setActiveProject(res.data.project);
     } catch (error) {
       console.error("Failed to update currentState:", error);
     }
   };
 
-  const handleComplete = async () => {
-    const updatedIndex = currentIndex;
+  const handleComplete = async (imageFile = null) => {
     const now = new Date();
     const pauseAt = now.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-    console.log(timeElapsed);
+
+    const formData = new FormData();
+    formData.append("currentState", 0);
+    formData.append("pauseAt", pauseAt);
+    formData.append("passedTime", timeElapsed.toString());
+    formData.append("note", "Task was completed!");
+    formData.append("status", "UNDERREVIEW");
+    if (imageFile) {
+      formData.append("completionImage", imageFile); // Adjust field name as per your backend
+    }
+
     try {
       const res = await axios.patch(
-        `${import.meta.env.VITE_BACKEND_URL}/project/${activeProject.id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/project/active/${activeProject.id}`,
+        formData,
         {
-          currentState: 0,
-          pauseAt,
-          passedTime: timeElapsed.toString(),
-          note: "Task was completed!",
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
       console.log(res.data);
       toast.success("Task was completed!");
+      setCompleteModalVisible(false);
+      setUploadedImage(null);
     } catch (error) {
-      console.error("Failed to update project with note:", error);
-      toast.error("Failed to save note.");
+      console.error("Failed to complete project:", error);
+      toast.error("Failed to complete task.");
     }
   };
-
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      handleComplete();
-    }
-  }, [timeLeft]);
 
   const speakNumber = (n) => {
     if (!window.speechSynthesis) return;
@@ -155,7 +160,6 @@ const NumberSlider = () => {
 
   const [renderArray, setRenderArray] = useState(getRenderArray(currentIndex));
 
-  // Speak initially
   useEffect(() => {
     if (renderArray[2]) {
       speakNumber(renderArray[2]);
@@ -167,6 +171,7 @@ const NumberSlider = () => {
       navigate("/login");
     }
   }, [user]);
+
   useEffect(() => {
     if (activeProject) {
       setEditName(activeProject.projectName);
@@ -186,23 +191,17 @@ const NumberSlider = () => {
         }
         return prev - 1;
       });
-
-      setTimeElapsed((prev) => prev + 1); // Increment elapsed time
+      setTimeElapsed((prev) => prev + 1);
     }, 1000);
 
     const sliderInterval = setInterval(() => {
       setCurrentIndex((prev) => {
         const nextIndex = prev + 1;
-
         if (nextIndex >= num.length) {
           clearInterval(sliderInterval);
-
-          // 🎯 Animation ended, reset state to 0 and patch
           setCurrentState(0);
-
           return prev;
         }
-
         setRenderArray(getRenderArray(nextIndex));
         speakNumber(num[nextIndex]);
         return nextIndex;
@@ -213,15 +212,14 @@ const NumberSlider = () => {
       clearInterval(timerInterval);
       clearInterval(sliderInterval);
     };
-  }, [paused]);
+  }, [paused, intervalSec, num.length]);
 
   const togglePause = async () => {
     const newPaused = !paused;
-
     if (newPaused) {
       toast.error("Paused");
       setPaused(true);
-      setNoteModalVisible(true); // open modal for note
+      setNoteModalVisible(true);
     } else {
       setPaused(false);
       toast.success("Resumed");
@@ -233,6 +231,8 @@ const NumberSlider = () => {
       onClick={togglePause}
       className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 cursor-pointer py-28 relative overflow-hidden"
     >
+      <Toaster />
+
       {activeProject?.image1 && (
         <img
           src={activeProject.image1}
@@ -252,7 +252,6 @@ const NumberSlider = () => {
           ⚙️
         </button>
       </div>
-
       {activeProject?.image2 && (
         <img
           src={activeProject.image2}
@@ -261,24 +260,20 @@ const NumberSlider = () => {
         />
       )}
 
-      {/* Background decorative elements */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-500 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Sliding Boxes */}
       <div className="relative flex justify-center items-end gap-3 sm:gap-6 mb-12 z-10">
         {renderArray.map((item, index) => {
           const base =
             "flex items-center justify-center font-bold rounded-2xl transition-all duration-500 ease-out shadow-2xl border backdrop-blur-sm";
-
           const sizeClasses =
             index === 2
               ? "w-36 h-36 sm:w-80 sm:h-80 text-5xl sm:text-9xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white border-emerald-300/50 z-20 shadow-emerald-500/50 animate-pulse"
               : "w-14 h-14 sm:w-24 sm:h-24 text-xl sm:text-3xl bg-gradient-to-br from-emerald-500/80 to-teal-600/80 text-white/90 border-emerald-400/30";
-
           const positionClasses =
             index === 0 || index === 4
               ? "translate-y-8 opacity-40 scale-75"
@@ -303,35 +298,38 @@ const NumberSlider = () => {
         })}
       </div>
 
-      {/* Time Display */}
       <div className="mb-8 z-10">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-8 py-4 shadow-xl">
           <div className="text-2xl sm:text-3xl font-bold text-center">
             {timeLeft > 0 ? (
               <div className="text-yellow-300 flex flex-col sm:flex-row items-center justify-center gap-2">
                 <span>
+                  {" "}
                   ⏳ {Math.floor(timeLeft / 60)}:
-                  {(timeLeft % 60).toString().padStart(2, "0")} left
+                  {(timeLeft % 60).toString().padStart(2, "0")} left{" "}
                 </span>
                 <span className="text-green-300">
+                  {" "}
                   ⬆️ {Math.floor(timeElapsed / 60)}:
-                  {(timeElapsed % 60).toString().padStart(2, "0")} passed
+                  {(timeElapsed % 60).toString().padStart(2, "0")} passed{" "}
                 </span>
               </div>
             ) : (
               <span className="text-green-300 animate-bounce">
+                {" "}
                 ✨ Completed at{" "}
                 <span className="text-green-300">
+                  {" "}
                   {Math.floor(timeElapsed / 60)}:
-                  {(timeElapsed % 60).toString().padStart(2, "0")} ✨
-                </span>
+                  {(timeElapsed % 60).toString().padStart(2, "0")} ✨{" "}
+                </span>{" "}
               </span>
             )}
           </div>
-
           <div className="text-purple-200 text-center text-sm mt-1">
             {timeLeft > 0 ? "Time Remaining" : "Task Finished"}
           </div>
+
           <div className="flex justify-center gap-4 mt-4 z-10">
             <button
               onClick={(e) => {
@@ -343,7 +341,6 @@ const NumberSlider = () => {
             >
               ⬅️ Back
             </button>
-
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -354,21 +351,68 @@ const NumberSlider = () => {
             >
               Forward ➡️
             </button>
+
+            {/* Complete Button - Only enabled when timeLeft <= 0 */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCompleteModalVisible(true); // Open image upload modal
+              }}
+              disabled={timeLeft > 0}
+              className={`px-6 py-3 rounded font-bold transition-all ${
+                timeLeft > 0
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed opacity-60"
+                  : "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg"
+              }`}
+            >
+              {timeLeft > 0 ? "⏳ Waiting..." : "✅ Complete Task"}
+            </button>
           </div>
+
           <p className="text-white text-sm mt-4 text-center">
             Step {currentIndex + 1} of {num.length}
           </p>
         </div>
       </div>
 
+      {/* Number Preview Grid */}
+      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-2xl max-w-4xl z-10">
+        <h3 className="text-white text-lg font-semibold mb-4 text-center">
+          Number Sequence
+        </h3>
+        <div className="overflow-x-auto overflow-y-hidden max-w-[80vw] scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-transparent">
+          <div className="flex flex-nowrap gap-2 min-h-[5rem] pr-4">
+            {num.map((item, i) => (
+              <div
+                key={i}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNumberClick(i, item);
+                }}
+                className={`cursor-pointer min-w-[3rem] h-10 sm:w-12 sm:h-12 font-bold flex items-center justify-center rounded-xl transition-all duration-300 text-sm sm:text-base ${
+                  i === currentIndex
+                    ? "bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-500/50 scale-110 border-2 border-emerald-300"
+                    : i < currentIndex
+                    ? "bg-gradient-to-br from-gray-400 to-gray-600 text-white opacity-60"
+                    : "bg-gradient-to-br from-purple-500/50 to-blue-500/50 text-white/80 border border-purple-400/30"
+                }`}
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Pause Note Modal */}
       {noteModalVisible && (
         <div
           className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-          onClick={(e) => e.stopPropagation()} // Prevent bubbling up when clicking outside modal content
+          onClick={(e) => e.stopPropagation()}
         >
           <div
             className="bg-white text-black rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4"
-            onClick={(e) => e.stopPropagation()} // Prevent bubbling up when clicking inside modal box
+            onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold">Pause Note</h2>
             <textarea
@@ -377,7 +421,7 @@ const NumberSlider = () => {
               placeholder="Why are you pausing?"
               value={pauseNote}
               onChange={(e) => setPauseNote(e.target.value)}
-              onClick={(e) => e.stopPropagation()} // Prevent bubbling when clicking inside textarea
+              onClick={(e) => e.stopPropagation()}
             />
             <div className="flex justify-end space-x-2">
               <button
@@ -405,11 +449,100 @@ const NumberSlider = () => {
         </div>
       )}
 
+      {/* Completion Image Upload Modal */}
+      {completeModalVisible && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              Upload Proof of Completion
+            </h2>
+
+            <div className="mb-6">
+              {uploadedImage ? (
+                <div>
+                  <img
+                    src={URL.createObjectURL(uploadedImage)}
+                    alt="Preview"
+                    className="mx-auto max-h-64 rounded-lg shadow"
+                  />
+                  <p className="mt-3 text-green-600 font-medium">
+                    Image ready to upload
+                  </p>
+                </div>
+              ) : (
+                <div className="border-4 border-dashed border-gray-300 rounded-xl p-10 text-gray-500">
+                  No image selected
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files[0]) {
+                  setUploadedImage(e.target.files[0]);
+                }
+              }}
+              className="hidden"
+            />
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Choose Image
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (uploadedImage) {
+                    handleComplete(uploadedImage);
+                  } else {
+                    toast.error("Please upload an image first");
+                  }
+                }}
+                disabled={!uploadedImage}
+                className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Submit Completion
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCompleteModalVisible(false);
+                  setUploadedImage(null);
+                }}
+                className="px-6 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal (unchanged) */}
       {showSettings && (
-        <div   onClick={(e) => e.stopPropagation()} className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+        >
           <div className="bg-white rounded-lg shadow p-6 w-full max-w-md relative">
             <h2 className="text-lg font-bold mb-4">Edit Project</h2>
-
             <label className="block mb-2">
               <span className="text-sm text-gray-600">Project Name</span>
               <input
@@ -422,7 +555,6 @@ const NumberSlider = () => {
                 className="w-full mt-1 border rounded px-3 py-2"
               />
             </label>
-
             <label className="block mb-2">
               <span className="text-sm text-gray-600">Time Gap (seconds)</span>
               <input
@@ -436,20 +568,6 @@ const NumberSlider = () => {
                 className="w-full mt-1 border rounded px-3 py-2"
               />
             </label>
-
-            <label className="block mb-4">
-              <span className="text-sm text-gray-600">Handled By</span>
-              <input
-                type="text"
-                value={editHandledBy}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  setEditHandledBy(e.target.value);
-                }}
-                className="w-full mt-1 border rounded px-3 py-2"
-              />
-            </label>
-
             <div className="flex justify-end gap-2">
               <button
                 onClick={(e) => {
@@ -465,9 +583,7 @@ const NumberSlider = () => {
                   e.stopPropagation();
                   try {
                     const res = await axios.patch(
-                      `${import.meta.env.VITE_BACKEND_URL}/project/${
-                        activeProject.id
-                      }`,
+                      `${import.meta.env.VITE_BACKEND_URL}/project/${activeProject.id}`,
                       {
                         projectName: editName,
                         gap: editGap.toString(),
@@ -493,36 +609,6 @@ const NumberSlider = () => {
           </div>
         </div>
       )}
-
-      {/* Number Preview Grid */}
-      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-2xl max-w-4xl z-10">
-        <h3 className="text-white text-lg font-semibold mb-4 text-center">
-          Number Sequence
-        </h3>
-
-        <div className="overflow-x-auto overflow-y-hidden max-w-[80vw] scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-transparent">
-          <div className="flex flex-nowrap gap-2 min-h-[5rem] pr-4">
-            {num.map((item, i) => (
-              <div
-                key={i}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNumberClick(i, item);
-                }}
-                className={`cursor-pointer min-w-[3rem] h-10 sm:w-12 sm:h-12 font-bold flex items-center justify-center rounded-xl transition-all duration-300 text-sm sm:text-base ${
-                  i === currentIndex
-                    ? "bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-500/50 scale-110 border-2 border-emerald-300"
-                    : i < currentIndex
-                    ? "bg-gradient-to-br from-gray-400 to-gray-600 text-white opacity-60"
-                    : "bg-gradient-to-br from-purple-500/50 to-blue-500/50 text-white/80 border border-purple-400/30"
-                }`}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

@@ -68,41 +68,49 @@ const styles = {
 
 export default function Login() {
   const [email, setEmail] = useState("");
-   const setUser = useUserStore((state) => state.setUser);
+  const setUser = useUserStore((state) => state.setUser);
 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-    const [showPassword, setShowPassword] = useState(false); // 👈 new state
+  const [showPassword, setShowPassword] = useState(false); // 👈 new state
 
   const [focusedField, setFocusedField] = useState(null);
-const navigate=useNavigate()
+  const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
     try {
-        if(!email || !password) {
-         setMessage("Please fill in all required fields.");
-        
-        throw new Error("All fields are required.");
-       
-      }
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/login`, { email, password });
-      if(res.data){
-        console.log(res.data)
-        setUser(res.data.user);
-        localStorage.setItem("user",res.data.user)
-        localStorage.setItem("userId",res.data.user.id)
+      if (!email || !password) {
+        setMessage("Please fill in all required fields.");
 
-        navigate('/project')
+        throw new Error("All fields are required.");
+      }
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/login`,
+        { email, password }
+      );
+      if (res.data) {
+        console.log(res.data);
+        setUser(res.data.user);
+        localStorage.setItem("user", res.data.user);
+        localStorage.setItem("userId", res.data.user.id);
+
+        if(res.data.user.role == "ADMIN"){
+        navigate("/project");
+        }else{
+          navigate("/user-project")
+        }
       }
       setMessage("Login successful!");
       setEmail("");
       setPassword("");
     } catch (error) {
-      setMessage("Login failed: " + (error.response?.data?.message || error.message));
+      setMessage(
+        "Login failed: " + (error.response?.data?.message || error.message)
+      );
     }
     setLoading(false);
   };
@@ -114,10 +122,12 @@ const navigate=useNavigate()
 
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
-      <h2 className="text-3xl font-bold text-center"  >Login</h2>
+      <h2 className="text-3xl font-bold text-center">Login</h2>
 
       <div style={styles.field}>
-        <label htmlFor="email" style={styles.label}>Email</label>
+        <label htmlFor="email" style={styles.label}>
+          Email
+        </label>
         <input
           id="email"
           type="email"
@@ -130,56 +140,63 @@ const navigate=useNavigate()
         />
       </div>
 
-     <div style={styles.field}>
-  <label htmlFor="password" style={styles.label}>
-    Password
-  </label>
-  <div style={{ position: "relative" }}>
-    <input
-      id="password"
-      type={showPassword ? "text" : "password"}
-      required
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      style={{
-        ...inputStyle("password"),
-        paddingRight: "2.75rem", // space for the eye icon
-      }}
-      onFocus={() => setFocusedField("password")}
-      onBlur={() => setFocusedField(null)}
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword((prev) => !prev)}
-      style={{
-        position: "absolute",
-        top: "50%",
-        right: "10px",
-        transform: "translateY(-50%)",
-        background: "transparent",
-        border: "none",
-        padding: 0,
-        margin: 0,
-        cursor: "pointer",
-        color: "#64748b",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        width: "24px",
-      }}
-      aria-label={showPassword ? "Hide password" : "Show password"}
-    >
-      {showPassword ? <FaRegEyeSlash size={18} /> : <FaRegEye size={18} />}
-    </button>
-  </div>
-</div>
-
+      <div style={styles.field}>
+        <label htmlFor="password" style={styles.label}>
+          Password
+        </label>
+        <div style={{ position: "relative" }}>
+          <input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              ...inputStyle("password"),
+              paddingRight: "2.75rem", // space for the eye icon
+            }}
+            onFocus={() => setFocusedField("password")}
+            onBlur={() => setFocusedField(null)}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            style={{
+              position: "absolute",
+              top: "50%",
+              right: "10px",
+              transform: "translateY(-50%)",
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              margin: 0,
+              cursor: "pointer",
+              color: "#64748b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              width: "24px",
+            }}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <FaRegEyeSlash size={18} />
+            ) : (
+              <FaRegEye size={18} />
+            )}
+          </button>
+        </div>
+      </div>
 
       <button
         type="submit"
         disabled={loading}
-        style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button}
+        style={
+          loading
+            ? { ...styles.button, ...styles.buttonDisabled }
+            : styles.button
+        }
       >
         {loading ? "Logging in..." : "Login"}
       </button>
@@ -188,7 +205,9 @@ const navigate=useNavigate()
         <p
           style={{
             ...styles.message,
-            color: message.startsWith("Login successful") ? "#16a34a" : "#dc2626",
+            color: message.startsWith("Login successful")
+              ? "#16a34a"
+              : "#dc2626",
           }}
         >
           {message}

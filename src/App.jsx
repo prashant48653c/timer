@@ -8,8 +8,9 @@ import NumberSlider from "./pages/Demo";
 import "./index.css"; // or './main.css'
 import LandingPage from "./pages/Landing";
 import { Toaster } from "react-hot-toast";
-
-
+import ProjectSliderPanel from "./components/SideBar";
+import AdminProjects from "./pages/ProjectManagement";
+import UserProjects from "./pages/UserDashboard";
 
 const linkStyle = {
   marginRight: 15,
@@ -112,6 +113,8 @@ export default function App() {
         <Route path="/project" element={<ProjectForm />} />
         <Route path="/timer" element={<Timer />} />
         <Route path="/demo" element={<NumberSlider />} />
+        <Route path="/project-management" element={<AdminProjects />} />
+        <Route path="/user-project" element={<UserProjects />} />
 
         <Route path="*" element={<Login />} />
       </Routes>

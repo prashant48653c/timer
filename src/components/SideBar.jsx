@@ -1,6 +1,4 @@
-// components/ProjectSliderPanel.js
-import React from "react";
-
+ 
 export default function ProjectSliderPanel({
   isOpen,
   projects,
