@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import useUserStore from "../reducer/useUserStore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import Sidebar from "../components/SideBar";
 
 export default function AdminProjects() {
   const { user } = useUserStore();
@@ -96,6 +97,10 @@ export default function AdminProjects() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+
+<Sidebar/>
+      <div className="flex-1 ml-64 p-6">
+      
       <div className="max-w-[90rem] mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -236,7 +241,7 @@ export default function AdminProjects() {
           </>
         )}
       </div>
-
+</div>
       {/* Details Modal */}
       {showDetailsModal && selectedProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">

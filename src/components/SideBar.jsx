@@ -1,85 +1,78 @@
- 
-export default function ProjectSliderPanel({
-  isOpen,
-  projects,
-  page,
-  totalPages,
-  onPageChange,
-  onProjectClick,
-  onViewNotes,
-  onClose,
-}) {
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import useUserStore from "../reducer/useUserStore";
+import toast from "react-hot-toast";
+
+const Sidebar = () => {
+  const { user, logout } = useUserStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
+
+  const menuItems = [
+    {
+      label: "Create Project",
+      icon: "➕",
+      path: "/project", // your create project page
+      visible: true,
+    },
+    {
+      label: "View Projects",
+      icon: "📋",
+      path: "/project-management", // admin projects page
+      visible: user?.role === "ADMIN",
+    },
+    {
+      label: "View Users",
+      icon: "👥",
+      path: "/users", // you can create this page later
+      visible: user?.role === "ADMIN",
+    },
+  ];
 
   return (
-    <div
-      className={`fixed top-0 left-0 h-full w-72 bg-white shadow-lg border-r border-gray-200 transition-transform duration-300 z-50 ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
-    >
-      <div className="p-4 flex justify-between items-center border-b">
-        <h2 className="text-lg font-bold text-green-700">Projects</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-red-500 text-xl font-bold">
-          &times;
+    <div className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-green-700 to-green-900 text-white shadow-2xl z-40 flex flex-col">
+      {/* Logo / Title */}
+      <div className="p-6 border-b border-green-600">
+        <h1 className="text-2xl font-bold tracking-wide">AI Verify</h1>
+        <p className="text-green-200 text-sm mt-1">
+          {user?.name} ({user?.role})
+        </p>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {menuItems.map(
+          (item) =>
+            item.visible && (
+              <button
+                key={item.label}
+                onClick={() => navigate(item.path)}
+                className="w-full flex items-center space-x-4 px-5 py-3 rounded-lg hover:bg-green-600 transition-all duration-200 text-left font-medium"
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            )
+        )}
+      </nav>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-green-600">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center space-x-4 px-5 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition-all duration-200 font-medium"
+        >
+          <span className="text-xl">🚪</span>
+          <span>Logout</span>
         </button>
       </div>
-      <div className="p-4 overflow-y-auto min-h-[30rem]  flex flex-col max-h-[90vh] space-y-3">
-        {projects.length === 0 ? (
-          <p className="text-gray-500 text-center mt-[30vh]">No projects yet.</p>
-        ) : (
-          projects.map((item, i) => (
-            <div
-              key={i}
-              className="bg-green-50 border border-green-200 rounded-lg p-3"
-            >
-              <p className="text-green-800 font-semibold mb-2">{item.projectName}</p>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => onViewNotes(item)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded"
-                >
-                  View
-                </button>
-                <button
-                  onClick={() => onProjectClick(item)}
-                  className="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded"
-                >
-                  Start
-                </button>
-              </div>
-            </div>
-          ))
-
-          
-        )}
-
-
-{projects.length != 0 && (
-
- <div className="flex justify-center items-center mt-4 space-x-2">
-  <button
-    disabled={page === 1}
-    onClick={() => onPageChange(page - 1)}
-    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
-  >
-    Previous
-  </button>
-  <span className="text-gray-700">
-    Page {page} of {totalPages}
-  </span>
-  <button
-    disabled={page === totalPages}
-    onClick={() => onPageChange(page + 1)}
-    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
-  >
-    Next
-  </button>
-</div>
-
-)}
-
-      </div>
-     
-
     </div>
   );
-}
+};
+
+export default Sidebar;
