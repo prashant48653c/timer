@@ -8,7 +8,6 @@ import Sidebar from "../components/SideBar";
 import { Upload, Users, Clock, Hash, User, FileText, X, Image as ImageIcon } from "lucide-react";
 
 export default function ProjectForm() {
-  const { setActiveProject } = useProjectStore();
   const { user } = useUserStore();
   const navigate = useNavigate();
 
@@ -36,6 +35,7 @@ export default function ProjectForm() {
       });
       setUsers(res.data.data || []);
     } catch (error) {
+      console.log(error)
       toast.error("Failed to load users");
     }
   };
@@ -120,7 +120,6 @@ export default function ProjectForm() {
   };
 
   // Notes Modal Functions
-  const openNotesModal = (notes) => setSelectedProjectNotes(notes || []);
   const closeNotesModal = () => setSelectedProjectNotes(null);
 
   useEffect(() => {
@@ -193,6 +192,8 @@ export default function ProjectForm() {
                           required
                         >
                           <option value="">Select a user</option>
+                          <option value={-1}>None</option>
+
                           {users.map((u) => (
                             <option key={u.id} value={u.id}>
                               {u.name} 

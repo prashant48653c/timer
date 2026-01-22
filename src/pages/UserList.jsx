@@ -4,7 +4,9 @@ import useUserStore from "../reducer/useUserStore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Sidebar from "../components/SideBar";
- 
+import { GrUserAdmin } from "react-icons/gr";
+import { MdDeleteForever } from "react-icons/md";
+
 export default function UserList() {
   const { user } = useUserStore();
   const navigate = useNavigate();
@@ -35,6 +37,47 @@ export default function UserList() {
       toast.error(error.response?.data?.message || "Failed to load users");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const makeAdmin = async (targetUserId) => {
+    if (!window.confirm(`Promote ${targetUserId} to ADMIN? (One-time action)`)) {
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/admin/${user.id}`, // your route: /admin/:id (current admin id)
+        { userId: targetUserId }                                 // your body: { userId }
+      );
+      toast.success("User is now Admin!");
+      fetchUsers(search, page); // refresh list
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err.response?.data?.message ||
+        "Failed to promote user to admin"
+      );
+    }
+  };
+
+  const deleteUser = async (targetUserId) => {
+    if (!window.confirm("Delete this user permanently?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/user/${targetUserId}`
+      );
+      toast.success("User deleted");
+      fetchUsers(search, page);
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err.response?.data?.message ||
+        "Failed to delete user"
+      );
     }
   };
 
@@ -71,7 +114,6 @@ export default function UserList() {
               </button>
             </div>
 
-            {/* Search Bar */}
             <input
               type="text"
               value={search}
@@ -84,7 +126,7 @@ export default function UserList() {
             />
           </div>
 
-          {/* Users Table */}
+          {/* Table */}
           {loading ? (
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
               <p className="text-gray-500 text-lg">Loading users...</p>
@@ -112,19 +154,19 @@ export default function UserList() {
                         <th className="px-6 py-4 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
                           Projects Assigned
                         </th>
-                       
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {users.map((u) => (
                         <tr key={u.id} className="hover:bg-indigo-50 transition">
-                          <td className="px-6 py-5">
-                            <div className="text-sm font-medium text-gray-900">
-                              {u.name}
-                            </div>
+                          <td className="px-6 py-5 text-sm font-medium text-gray-900">
+                            {u.name}
                           </td>
-                          <td className="px-6 py-5">
-                            <div className="text-sm text-gray-600">{u.email}</div>
+                          <td className="px-6 py-5 text-sm text-gray-600">
+                            {u.email}
                           </td>
                           <td className="px-6 py-5">
                             <span
@@ -137,12 +179,30 @@ export default function UserList() {
                               {u.role}
                             </span>
                           </td>
-                          <td className="px-6 py-5 text-center">
-                            <span className="text-sm text-gray-700">
-                              {u.projects.length || 0}
-                            </span>
+                          <td className="px-6 py-5 text-center text-sm text-gray-700">
+                            {u.projects?.length || 0}
                           </td>
-                         
+                          <td className="px-6 py-5">
+                            <div className="flex items-center justify-center gap-5">
+                              {u.role !== "ADMIN" && (
+                                <button
+                                  onClick={() => makeAdmin(u.id)}
+                                  title="Promote to Admin (one time)"
+                                  className="text-purple-600 hover:text-purple-900 transition"
+                                >
+                                  <GrUserAdmin size={24} />
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => deleteUser(u.id)}
+                                title="Delete User"
+                                className="text-red-600 hover:text-red-800 transition"
+                              >
+                                <MdDeleteForever size={24} />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -157,7 +217,7 @@ export default function UserList() {
                     <button
                       disabled={page === 1}
                       onClick={() => setPage(page - 1)}
-                      className="px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg disabled:opacity-50 transition"
                     >
                       Previous
                     </button>
@@ -167,7 +227,7 @@ export default function UserList() {
                     <button
                       disabled={page === totalPages}
                       onClick={() => setPage(page + 1)}
-                      className="px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg disabled:opacity-50 transition"
                     >
                       Next
                     </button>
